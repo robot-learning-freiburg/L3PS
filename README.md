@@ -1,5 +1,5 @@
 # L3PS
-[**arXiv**](https://arxiv.org/abs/2503.02372) | [**Website**](https://l3ps.cs.uni-freiburg.de/) | [**Video**](https://youtu.be/)
+[**arXiv**](https://arxiv.org/abs/2503.02372) | [**Website**](https://l3ps.cs.uni-freiburg.de/) | [**Video**](https://youtu.be/389jPL83OTI)
 
 This repository is the official implementation of the paper:
 
