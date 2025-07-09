@@ -1,0 +1,131 @@
+# pytorch_lightning==1.8.6
+seed_everything: 0
+
+trainer:
+  accelerator: gpu
+  strategy: ddp_find_unused_parameters_false
+  logger: False
+  devices: [0, 1, 2, 3]
+
+model:
+  semantic_model:
+    class_path: semantic_fine_tuning.SemanticFineTuner
+    init_args:
+      dinov2_vit_model: "vitb14"
+      num_classes: ${data.init_args.num_classes}
+      output_size: ${data_params.image_size_original}
+      upsample_factor: 14.0
+      head: "mlp"
+      ignore_index: 0
+      top_k_percent_pixels: 0.2
+      test_multi_scales: [1, 2, 3]
+      test_multi_scales_stride_divider: [1, 1, 1]
+      test_plot: False
+      test_save_dir: null
+  semantic_model_ckpt: "checkpoints/semantic_nuimages.ckpt"
+  boundary_model:
+    class_path: boundary_fine_tuning.BoundaryFineTuner
+    init_args:
+      dinov2_vit_model: "vitb14"
+      output_size: ${data_params.image_size_original}
+      mode: "direct"
+      upsample_factor: 4.0
+      head: "mlp"
+      neighbor_radius: 1.5
+      threshold_boundary: null
+      num_boundary_neighbors: 1
+      test_multi_scales: [3, 4]
+      test_multi_scales_stride_divider: [1, 1, 1]
+      boundary_margin: ${model.boundary_margin}
+      test_plot: False
+  boundary_model_ckpt: "checkpoints/boundary_nuimages.ckpt"
+  do_post_processing: True
+  boundary_margin: 10
+  boundary_min_pixel: 100
+  structure_connectivity: [[0, 1, 0], [1, 1, 1], [0, 1, 0]]
+  instance_min_pixel:
+    [
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      500,
+      2000,
+      2000,
+      2000,
+      500,
+      500,
+    ]
+  mode: "ncut"
+  output_size: ${data_params.image_size_original}
+  upsample_factor_affinity_map: 5.0
+  neighbor_radius_affinity_matrix: 5
+  beta: 70.0
+  eigen_tol: 1e-6
+  eigen_vec_hist_bins: 10
+  ncut_threshold: 0.002
+  eigen_vec_hist_ratio: 0.03
+  eigen_vec_thresholds: 12
+  threshold_boundary: 0.98
+  test_plot: False
+  test_save_dir: "pseudo_labels/"
+  test_save_vis: False
+  debug_plot: False
+  ignore_index: 0
+
+data:
+  class_path: datasets.nuscenes.NuScenesDataModule
+  init_args:
+    cfg_dataset:
+      version: "v1.0-trainval"
+      dataroot: "/home/datasets/nuscenes"
+      image_size: ${data_params.image_size_original}
+      verbose: false
+      pseudo_train: true
+      scene: null
+    num_classes: 18
+    batch_size: 1
+    num_workers: 1
+    transform_train:
+      - class_path: utils.transforms.ToTensor
+      - class_path: utils.transforms.RandomHorizontalFlip
+      - class_path: utils.transforms.RandomResizedCrop
+        init_args:
+          size: ${data_params.image_size_input}
+          scale: [0.4, 1.0]
+      - class_path: utils.transforms.ColorJitter
+        init_args:
+          brightness: 0.2
+          contrast: 0.2
+          saturation: 0.2
+          hue: 0.2
+      - class_path: utils.transforms.MaskPostProcess
+      - class_path: utils.transforms.ImageNormalize
+        init_args:
+          mean: ${data_params.image_mean}
+          std: ${data_params.image_std}
+    transform_test:
+      - class_path: utils.transforms.ToTensor
+      - class_path: utils.transforms.Resize
+        init_args:
+          size: ${data_params.image_size_input}
+      - class_path: utils.transforms.MaskPostProcess
+      - class_path: utils.transforms.ImageNormalize
+        init_args:
+          mean: ${data_params.image_mean}
+          std: ${data_params.image_std}
+
+data_params:
+  image_size_original: [900, 1600]
+  image_size_input: [896, 1596]
+  image_mean: [0.485, 0.456, 0.406]
+  image_std: [0.229, 0.224, 0.225]

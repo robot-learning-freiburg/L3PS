@@ -1,0 +1,8 @@
+*.pyc
+*.log
+*.obj
+*.npy
+*.npz
+.vscode/
+P3Former_
+

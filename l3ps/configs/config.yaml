@@ -1,0 +1,42 @@
+process_count: 4
+experiment_name: val 
+
+dataset:
+  path: /home/datasets/nuscenes # Path to the dataset
+  version: v1.0-trainval
+  split: val # Split to use, e.g. train, val
+
+generate:
+  cameras: ['CAM_FRONT_LEFT', 'CAM_FRONT_RIGHT', 'CAM_BACK_LEFT', 'CAM_BACK_RIGHT', 'CAM_FRONT', 'CAM_BACK']
+  pastel_labels_path: workdir/2D_panoptic_labels/${dataset.split} # Path to the pseudo labels (2D panoptic labels)
+  output_path: workdir/primal/${dataset.split} # Path to save primal (projected 3D) labels
+
+accumulate:
+  primal_path: workdir/primal/${dataset.split} # Path to the primal labels
+  output_path: workdir/accumulate/${dataset.split} # Path to save the output
+  kiss_icp: # Parameters for the ICP-based accumulation
+    data:
+      deskew: False
+      max_range: 80.0
+      min_range: 5.0
+
+    mapping:
+      max_points_per_voxel: 20
+
+    adaptive_threshold:
+      initial_threshold: 60.0
+      min_motion_th: 0.8
+
+refine:
+  noise_class: 0
+  rare_classes: [ 3, 5, 6, 9, 12, 13 ]
+  min_cluster_size: 5
+  input_path: ${accumulate.output_path}
+  output_path: workdir/refine/${experiment_name}
+
+evaluate:
+  n_classes: 17
+  ignore_label: 0
+  primal_labels_path: workdir/accumulate/${dataset.split}
+  refined_labels_path: workdir/refine/${experiment_name}
+  log_path: workdir/logs/${experiment_name}

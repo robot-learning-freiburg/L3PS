@@ -1,0 +1,8 @@
+*/patchwork-plusplus/*
+workdir*/*
+.vscode/*
+pseudo_nuscenes/*
+outputs/*
+useful_scripts/
+*_.*
+old_version/
